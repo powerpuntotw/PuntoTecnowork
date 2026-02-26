@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Home, Package, Users, Gift, LogOut, User, DollarSign, LifeBuoy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { DynamicLogo } from '../components/DynamicLogo';
@@ -85,4 +86,3 @@ export const LocalLayout = () => {
         </div>
     );
 };
-
