@@ -12,9 +12,8 @@ if (supabaseAnonKey.includes('service_role')) {
 }
 
 const customFetch = async (url, options) => {
-    // Determine if request is a Storage operation (uploads/downloads can take much longer)
     const isStorage = typeof url === 'string' && url.includes('/storage/v1/object/');
-    const timeoutMs = isStorage ? 300000 : 15000; // 5 mins for storage, 15s for DB/Auth
+    const timeoutMs = isStorage ? 300000 : 15000;
 
     const controller = new AbortController();
     const timerId = setTimeout(() => controller.abort(), timeoutMs);
@@ -35,36 +34,10 @@ const customFetch = async (url, options) => {
     }
 };
 
-// Custom Web Lock implementation to prevent infinite hanging when browser 
-// background tabs (Memory Saver) deadlock the Supabase internal mutex.
+// Bypass Web Locks completely — they cause deadlocks with Chrome Memory Saver.
+// Multi-tab sync is handled by BroadcastChannel in AuthContext.
 const customLock = async (name, acquireTimeout, fn) => {
-    if (typeof navigator === 'undefined' || !navigator.locks) {
-        return await fn();
-    }
-
-    // Web Locks can hang infinitely if their owner tab was suspended/throttled.
-    // If the lock isn't acquired within 2000ms, we assume a deadlock and bypass it.
-    const controller = new AbortController();
-    const timerId = setTimeout(() => controller.abort(), 2000);
-
-    try {
-        return await navigator.locks.request(name, { signal: controller.signal }, async () => {
-            clearTimeout(timerId);
-            return await fn();
-        });
-    } catch (e) {
-        clearTimeout(timerId);
-        console.warn(`[Supabase Antifreeze] Candado bloqueado en '${name}'. Robando el lock del proceso fantasma...`);
-        // steal:true libera el lock del tab suspendido (fantasma) y lo adquiere correctamente,
-        // para que todas las operaciones de auth futuras funcionen sin nuevo deadlock.
-        try {
-            return await navigator.locks.request(name, { steal: true }, fn);
-        } catch {
-            // Fallback: si steal no está soportado, ejecutar sin lock
-            console.warn(`[Supabase Antifreeze] Robo no soportado, ejecutando sin lock.`);
-            return await fn();
-        }
-    }
+    return await fn();
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
