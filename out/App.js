@@ -1,0 +1,36 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./components/Toast";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Login } from "./pages/Login";
+import { AuthCallback } from "./pages/AuthCallback";
+import { NotFound } from "./components/NotFound";
+import { ClienteLayout } from "./layouts/ClienteLayout";
+import { LocalLayout } from "./layouts/LocalLayout";
+import { AdminLayout } from "./layouts/AdminLayout";
+import { ClienteDashboard } from "./pages/cliente/Dashboard";
+import { UploadFiles } from "./pages/cliente/UploadFiles";
+import { Rewards } from "./pages/cliente/Rewards";
+import { Orders as ClienteOrders } from "./pages/cliente/Orders";
+import { Profile } from "./pages/cliente/Profile";
+import { PointsHistory } from "./pages/cliente/PointsHistory";
+import { LocalDashboard } from "./pages/local/Dashboard";
+import { LocalOrders } from "./pages/local/Orders";
+import { LocalRedemptions, LocalClients } from "./pages/local/Redemptions";
+import { LocalPrices } from "./pages/local/Prices";
+import { LocalProfile } from "./pages/local/Profile";
+import { LocalSupport } from "./pages/local/Support";
+import { AdminDashboard } from "./pages/admin/Dashboard";
+import { AdminUsers } from "./pages/admin/Users";
+import { AdminLocations } from "./pages/admin/Locations";
+import { AdminOrders } from "./pages/admin/Orders";
+import { AdminRewards } from "./pages/admin/Rewards";
+import { AdminReports } from "./pages/admin/Reports";
+import { AdminSupport } from "./pages/admin/Support";
+import { AdminBranding } from "./pages/admin/Branding";
+import { AdminMaintenance } from "./pages/admin/Maintenance";
+import { AdminAuditLogs } from "./pages/admin/AuditLogs";
+function App() {
+  return /* @__PURE__ */ React.createElement(AuthProvider, null, /* @__PURE__ */ React.createElement(ToastProvider, null, /* @__PURE__ */ React.createElement(Routes, null, /* @__PURE__ */ React.createElement(Route, { path: "/login", element: /* @__PURE__ */ React.createElement(Login, null) }), /* @__PURE__ */ React.createElement(Route, { path: "/auth/callback", element: /* @__PURE__ */ React.createElement(AuthCallback, null) }), /* @__PURE__ */ React.createElement(Route, { path: "/cliente", element: /* @__PURE__ */ React.createElement(ProtectedRoute, { allowedRoles: ["client"] }, /* @__PURE__ */ React.createElement(ClienteLayout, null)) }, /* @__PURE__ */ React.createElement(Route, { index: true, element: /* @__PURE__ */ React.createElement(Navigate, { to: "dashboard", replace: true }) }), /* @__PURE__ */ React.createElement(Route, { path: "dashboard", element: /* @__PURE__ */ React.createElement(ClienteDashboard, null) }), /* @__PURE__ */ React.createElement(Route, { path: "upload", element: /* @__PURE__ */ React.createElement(UploadFiles, null) }), /* @__PURE__ */ React.createElement(Route, { path: "rewards", element: /* @__PURE__ */ React.createElement(Rewards, null) }), /* @__PURE__ */ React.createElement(Route, { path: "orders", element: /* @__PURE__ */ React.createElement(ClienteOrders, null) }), /* @__PURE__ */ React.createElement(Route, { path: "profile", element: /* @__PURE__ */ React.createElement(Profile, null) }), /* @__PURE__ */ React.createElement(Route, { path: "points-history", element: /* @__PURE__ */ React.createElement(PointsHistory, null) })), /* @__PURE__ */ React.createElement(Route, { path: "/local", element: /* @__PURE__ */ React.createElement(ProtectedRoute, { allowedRoles: ["local"] }, /* @__PURE__ */ React.createElement(LocalLayout, null)) }, /* @__PURE__ */ React.createElement(Route, { index: true, element: /* @__PURE__ */ React.createElement(Navigate, { to: "dashboard", replace: true }) }), /* @__PURE__ */ React.createElement(Route, { path: "dashboard", element: /* @__PURE__ */ React.createElement(LocalDashboard, null) }), /* @__PURE__ */ React.createElement(Route, { path: "orders", element: /* @__PURE__ */ React.createElement(LocalOrders, null) }), /* @__PURE__ */ React.createElement(Route, { path: "clients", element: /* @__PURE__ */ React.createElement(LocalClients, null) }), /* @__PURE__ */ React.createElement(Route, { path: "redemptions", element: /* @__PURE__ */ React.createElement(LocalRedemptions, null) }), /* @__PURE__ */ React.createElement(Route, { path: "prices", element: /* @__PURE__ */ React.createElement(LocalPrices, null) }), /* @__PURE__ */ React.createElement(Route, { path: "support", element: /* @__PURE__ */ React.createElement(LocalSupport, null) }), /* @__PURE__ */ React.createElement(Route, { path: "profile", element: /* @__PURE__ */ React.createElement(LocalProfile, null) })), /* @__PURE__ */ React.createElement(Route, { path: "/admin", element: /* @__PURE__ */ React.createElement(ProtectedRoute, { allowedRoles: ["admin"] }, /* @__PURE__ */ React.createElement(AdminLayout, null)) }, /* @__PURE__ */ React.createElement(Route, { index: true, element: /* @__PURE__ */ React.createElement(Navigate, { to: "dashboard", replace: true }) }), /* @__PURE__ */ React.createElement(Route, { path: "dashboard", element: /* @__PURE__ */ React.createElement(AdminDashboard, null) }), /* @__PURE__ */ React.createElement(Route, { path: "users", element: /* @__PURE__ */ React.createElement(AdminUsers, null) }), /* @__PURE__ */ React.createElement(Route, { path: "locations", element: /* @__PURE__ */ React.createElement(AdminLocations, null) }), /* @__PURE__ */ React.createElement(Route, { path: "orders", element: /* @__PURE__ */ React.createElement(AdminOrders, null) }), /* @__PURE__ */ React.createElement(Route, { path: "rewards", element: /* @__PURE__ */ React.createElement(AdminRewards, null) }), /* @__PURE__ */ React.createElement(Route, { path: "reports", element: /* @__PURE__ */ React.createElement(AdminReports, null) }), /* @__PURE__ */ React.createElement(Route, { path: "support", element: /* @__PURE__ */ React.createElement(AdminSupport, null) }), /* @__PURE__ */ React.createElement(Route, { path: "maintenance", element: /* @__PURE__ */ React.createElement(AdminMaintenance, null) }), /* @__PURE__ */ React.createElement(Route, { path: "branding", element: /* @__PURE__ */ React.createElement(AdminBranding, null) }), /* @__PURE__ */ React.createElement(Route, { path: "audit", element: /* @__PURE__ */ React.createElement(AdminAuditLogs, null) })), /* @__PURE__ */ React.createElement(Route, { path: "/", element: /* @__PURE__ */ React.createElement(Navigate, { to: "/login", replace: true }) }), /* @__PURE__ */ React.createElement(Route, { path: "*", element: /* @__PURE__ */ React.createElement(NotFound, null) }))));
+}
+export default App;

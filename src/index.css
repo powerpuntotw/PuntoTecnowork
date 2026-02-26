@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    @apply bg-gray-light text-gray-dark transition-colors duration-300;
+  }
+
+  /* Dark mode */
+  .dark body,
+  .dark {
+    --tw-bg-opacity: 1;
+  }
+
+  .dark .bg-white {
+    background-color: #1E1E2E;
+  }
+
+  .dark .bg-gray-50 {
+    background-color: #252535;
+  }
+
+  .dark .bg-gray-100 {
+    background-color: #2A2A3A;
+  }
+
+  .dark .bg-gray-light {
+    background-color: #141422;
+  }
+
+  .dark .text-gray-dark {
+    color: #E5E5E5;
+  }
+
+  .dark .text-gray-medium {
+    color: #9CA3AF;
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .divide-gray-100>*+* {
+    border-color: #2A2A3A;
+  }
+
+  .dark .shadow,
+  .dark .shadow-lg,
+  .dark .shadow-2xl {
+    --tw-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .dark input,
+  .dark select,
+  .dark textarea {
+    background-color: #252535;
+    border-color: #3A3A4A;
+    color: #E5E5E5;
+  }
+
+  .dark .hover\:bg-gray-50:hover {
+    background-color: #252535;
+  }
+
+  /* Prevent zoom on inputs in iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@layer components {
+
+  /* Hero gradient animation */
+  .hero-gradient {
+    background: linear-gradient(135deg, #EB1C24 0%, #FFC905 50%, #EB1C24 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 4s ease infinite;
+  }
+
+  /* Glassmorphism for modals */
+  .glass-modal {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .glass-modal {
+    background: rgba(30, 30, 46, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Shimmer loader (polished) */
+  .shimmer {
+    background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  .dark .shimmer {
+    background: linear-gradient(110deg, #252535 8%, #2A2A3A 18%, #252535 33%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  /* Safe area padding for mobile notches/home indicators */
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  }
+
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
