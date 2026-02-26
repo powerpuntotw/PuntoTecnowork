@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const initializedRef = useRef(false);
     const intentionalSignOutRef = useRef(false);
+    const lastActiveRef = useRef(Date.now());
+    const recoveringRef = useRef(false);
 
     const fetchProfile = useCallback(async (userId, attempt = 1) => {
         try {
@@ -36,24 +38,20 @@ export const AuthProvider = ({ children }) => {
 
         const initialize = async () => {
             try {
-                // Wrap getSession in a manually enforced timeout because Supabase auth calls
-                // might not perfectly respect the custom fetch timeout when checking indexedDB
                 const sessionPromise = supabase.auth.getSession();
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Timeout')), 10000));
-
                 const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
 
                 if (session?.user && !cancelled) {
                     const profilePromise = fetchProfile(session.user.id);
                     const fetchedProfile = await Promise.race([profilePromise, timeoutPromise]);
-
                     if (!cancelled) {
                         setUser(session.user);
                         setProfile(fetchedProfile);
                     }
                 }
             } catch (err) {
-                console.warn('Error/Timeout en initialize auth (podría estar offline/dormido):', err);
+                console.warn('Error/Timeout en initialize auth:', err);
             } finally {
                 if (!cancelled) {
                     initializedRef.current = true;
@@ -70,27 +68,20 @@ export const AuthProvider = ({ children }) => {
 
                 if (event === 'SIGNED_IN' && session?.user) {
                     if (!cancelled) setUser(session.user);
-                    // fetchProfile will call setProfile internally
-                    // For new users, profile may not exist yet (AuthCallback creates it)
-                    // so we only update if we actually got a profile
-                    const fetched = await fetchProfile(session.user.id);
-                    // fetchProfile already called setProfile, no extra action needed
+                    await fetchProfile(session.user.id);
                 } else if ((event === 'SIGNED_OUT' || event === 'USER_DELETED') && intentionalSignOutRef.current) {
                     intentionalSignOutRef.current = false;
-                    if (!cancelled) {
-                        setUser(null);
-                        setProfile(null);
-                    }
+                    if (!cancelled) { setUser(null); setProfile(null); }
                 } else if (event === 'SIGNED_OUT' && !intentionalSignOutRef.current) {
-                    // Transient SIGNED_OUT from background token refresh – ignore to prevent blank panels
-                    // The visibilitychange listener will recover the session
-                    console.warn('Transient SIGNED_OUT detected, recovering...');
+                    // Transient SIGNED_OUT — DON'T clear state, recover silently
+                    console.warn('Transient SIGNED_OUT detected, recovering silently...');
                     try {
                         const { data: { session } } = await supabase.auth.getSession();
                         if (session?.user && !cancelled) {
                             setUser(session.user);
                             fetchProfile(session.user.id);
                         }
+                        // If no session, DON'T clear user/profile — user might be mid-work
                     } catch (_) { /* silent */ }
                 } else if (event === 'TOKEN_REFRESHED' && session?.user) {
                     if (!cancelled) setUser(session.user);
@@ -99,56 +90,100 @@ export const AuthProvider = ({ children }) => {
             }
         );
 
-        // Cross-tab logout sync
         const authChannel = new BroadcastChannel('auth_channel');
         authChannel.onmessage = (event) => {
             if (event.data?.type === 'SIGN_OUT') {
-                setUser(null);
-                setProfile(null);
+                setUser(null); setProfile(null);
                 window.location.href = '/login';
             }
-            if (event.data?.type === 'SIGN_IN') {
-                window.location.reload();
+            if (event.data?.type === 'SIGN_IN') window.location.reload();
+        };
+
+        return () => { cancelled = true; subscription?.unsubscribe(); authChannel.close(); };
+    }, [fetchProfile]);
+
+    // === Silent recovery — NEVER reloads, NEVER clears UI state ===
+    useEffect(() => {
+        const recoverSession = async () => {
+            if (recoveringRef.current) return;
+            recoveringRef.current = true;
+
+            try {
+                const timeout = (ms) => new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), ms));
+
+                // Step 1: refreshSession — gets fresh token, unblocks Supabase internals
+                try {
+                    const { data, error } = await Promise.race([
+                        supabase.auth.refreshSession(), timeout(5000)
+                    ]);
+                    if (!error && data?.session?.user) {
+                        console.log('[Auth Recovery] Session refreshed silently');
+                        setUser(data.session.user);
+                        fetchProfile(data.session.user.id);
+                        return;
+                    }
+                } catch (_) { /* timeout or error, try fallback */ }
+
+                // Step 2: getSession fallback
+                try {
+                    const { data: { session } } = await Promise.race([
+                        supabase.auth.getSession(), timeout(5000)
+                    ]);
+                    if (session?.user) {
+                        console.log('[Auth Recovery] Session recovered via getSession');
+                        setUser(session.user);
+                        fetchProfile(session.user.id);
+                        return;
+                    }
+                } catch (_) { /* also failed */ }
+
+                // Step 3: Both failed — preserve UI state anyway.
+                // User might be filling a form. Their work matters more than auth state.
+                // Next actual API call will fail naturally and show an error.
+                console.warn('[Auth Recovery] Could not recover session, preserving UI state.');
+
+            } finally {
+                recoveringRef.current = false;
             }
         };
 
-        return () => {
-            cancelled = true;
-            subscription?.unsubscribe();
-            authChannel.close();
+        const handleVisibility = () => {
+            if (document.visibilityState !== 'visible') {
+                lastActiveRef.current = Date.now();
+                return;
+            }
+            const elapsed = Date.now() - lastActiveRef.current;
+            lastActiveRef.current = Date.now();
+
+            if (elapsed > 30000 && user?.id) {
+                console.log(`[Auth Recovery] Tab resumed after ${Math.round(elapsed / 1000)}s`);
+                recoverSession();
+            }
         };
-    }, [fetchProfile]);
 
-    // Recover session when tab becomes visible again after backgrounding
-    useEffect(() => {
-        if (!user?.id) return;
-
-        const handleVisibility = async () => {
-            // Tab became visible again
-            if (document.visibilityState === 'visible') {
-                try {
-                    // Force auth context to check itself, with timeout so it doesn't hang.
-                    // The custom web lock in supabase.js will intercept deadlocks seamlessly.
-                    const sessionPromise = supabase.auth.getSession();
-                    const timeout = new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 5000));
-                    const { data: { session } } = await Promise.race([sessionPromise, timeout]);
-
-                    if (session?.user) fetchProfile(session.user.id);
-                } catch (_) { /* silent */ }
+        const handleResume = () => {
+            const elapsed = Date.now() - lastActiveRef.current;
+            lastActiveRef.current = Date.now();
+            if (elapsed > 30000 && user?.id) {
+                console.log(`[Auth Recovery] Resume event after ${Math.round(elapsed / 1000)}s`);
+                recoverSession();
             }
         };
 
         document.addEventListener('visibilitychange', handleVisibility);
+        document.addEventListener('resume', handleResume);
         return () => {
             document.removeEventListener('visibilitychange', handleVisibility);
+            document.removeEventListener('resume', handleResume);
         };
     }, [user?.id, fetchProfile]);
 
-    // Keep-alive: ping DB every 90 seconds while logged in
+    // Keep-alive ping every 90s
     useEffect(() => {
         if (!user?.id) return;
         const keepAlive = setInterval(async () => {
             try {
+                lastActiveRef.current = Date.now();
                 await supabase.from('app_settings').select('id').limit(1);
             } catch (_) { /* silent */ }
         }, 90 * 1000);
